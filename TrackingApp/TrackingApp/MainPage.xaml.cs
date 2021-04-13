@@ -21,7 +21,6 @@ namespace TrackingApp
                 Label = "Tokyo SKYTREE",
                 Address = "Sumida-Ku, Tokyo, Japan",
                 Position = new Position(35.71d, 139.81d),
-                Rotation = 33.3f,
                 Tag = "id_tokyo"
             };
             map.Pins.Add(pinTokyo);
@@ -42,4 +41,21 @@ namespace TrackingApp
             StartTrackingBtn.IsVisible = true;
         }
     }
+
+/*TODO
+ * Read GPS location
+ * 1) If Send GPS signal switch has been flipped
+ * 2) Set GPS location as the current pin, might require converting location into positioning coordinates
+ * 3) Sending this to the backend.
+ * 4) Can this work when the application is closed?
+ * 5) Last known location set if Send GPS signal switch has not been flipped
+ * 
+ * Read Devices GPS location
+ * 1) When the start tracking button has been pressed
+ * 2) Set that devices location as a seperate pin
+ * 
+ * Make These two coordinates constantly update
+ * Workbook!
+ */
+
 }
