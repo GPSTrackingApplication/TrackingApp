@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 using Foundation;
+using TrackingApp.Constants;
 using UIKit;
 
 namespace TrackingApp.iOS
@@ -23,6 +24,8 @@ namespace TrackingApp.iOS
         public override bool FinishedLaunching(UIApplication app, NSDictionary options)
         {
             global::Xamarin.Forms.Forms.Init();
+            Xamarin.FormsGoogleMaps.Init(AppConstants.GoogleMapsApiKey);
+
             LoadApplication(new App());
 
             return base.FinishedLaunching(app, options);
