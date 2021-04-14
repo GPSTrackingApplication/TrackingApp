@@ -30,7 +30,8 @@
         
         <StackLayout BackgroundColor="#2196F3" Padding="10">
             <Label Text="Send GPS Signal" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" TextColor="White" FontSize="20" VerticalOptions="Center"/>
-            <Switch VerticalOptions="Center" 
+            <Switch x:Name="gpsSwitch"
+                    VerticalOptions="Center" 
                     HorizontalOptions="Center">
             </Switch>
         </StackLayout>

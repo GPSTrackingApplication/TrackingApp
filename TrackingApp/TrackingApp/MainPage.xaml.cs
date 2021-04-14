@@ -6,6 +6,8 @@ using System.Text;
 using System.Threading.Tasks;
 using Xamarin.Forms;
 using Xamarin.Forms.GoogleMaps;
+using Xamarin.Essentials;
+using System.Diagnostics;
 
 namespace TrackingApp
 {
@@ -14,6 +16,7 @@ namespace TrackingApp
         public MainPage()
         {
             InitializeComponent();
+
 
             Pin pinTokyo = new Pin()
             {
@@ -27,11 +30,46 @@ namespace TrackingApp
             map.MoveToRegion(MapSpan.FromCenterAndRadius(pinTokyo.Position, Distance.FromMeters(5000)));
         }
 
-        private void StartTrackingBtn_Clicked(object sender, EventArgs e)
+        private async void StartTrackingBtn_Clicked(object sender, EventArgs e)
         {
-            StartTrackingBtn.IsVisible = false;
-            StopTrackingBtn.IsVisible = true;
+            if (gpsSwitch.IsToggled == true)
+            {
+                StartTrackingBtn.IsVisible = false;
+                StopTrackingBtn.IsVisible = true;
 
+                try
+                {
+                    var location = await Geolocation.GetLastKnownLocationAsync();
+                    if (location == null)
+                    {
+                        /*
+                        var request = new GeolocationRequest(GeolocationAccuracy.Low);
+                        location = await Geolocation.GetLocationAsync(request);
+                        */
+
+                        location = await Geolocation.GetLocationAsync(new GeolocationRequest
+                        {
+                            DesiredAccuracy = GeolocationAccuracy.Low,
+                            Timeout = TimeSpan.FromSeconds(30)
+
+                        });
+
+                    }
+                    if (location == null)
+                        StopTrackingBtn.Text = "No GPS";
+                    else
+                        StopTrackingBtn.Text = $"{location.Latitude} {location.Longitude}";
+
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Something is wrong");
+                }
+            }
+            else
+            {
+                await DisplayAlert("Alert", "You cannot begin tracking unless the 'Send GPS Signal' switch is turned on!", "OK");
+            }
 
         }
 
