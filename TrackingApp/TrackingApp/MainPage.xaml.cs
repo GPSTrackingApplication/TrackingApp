@@ -17,23 +17,24 @@ namespace TrackingApp
         {
             InitializeComponent();
 
-
-            Pin pinTokyo = new Pin()
+            Pin pinUserDevice = new Pin()
             {
                 Type = PinType.Place,
-                Label = "Tokyo SKYTREE",
-                Address = "Sumida-Ku, Tokyo, Japan",
+                Label = "Your Device",
                 Position = new Position(35.71d, 139.81d),
-                Tag = "id_tokyo"
+                Tag = "id_userDevice"
             };
-            map.Pins.Add(pinTokyo);
-            map.MoveToRegion(MapSpan.FromCenterAndRadius(pinTokyo.Position, Distance.FromMeters(5000)));
+            map.Pins.Add(pinUserDevice);
+            map.MoveToRegion(MapSpan.FromCenterAndRadius(pinUserDevice.Position, Distance.FromMeters(5000)));
         }
 
-        private async void StartTrackingBtn_Clicked(object sender, EventArgs e)
+        private async void gpsSwitchOnToggled(object sender, ToggledEventArgs e)
         {
+            await DisplayAlert("Alert", "Switch toggled", "OK");
             if (gpsSwitch.IsToggled == true)
             {
+
+                // Take these lines out
                 StartTrackingBtn.IsVisible = false;
                 StopTrackingBtn.IsVisible = true;
 
@@ -55,10 +56,14 @@ namespace TrackingApp
                         });
 
                     }
+
                     if (location == null)
-                        StopTrackingBtn.Text = "No GPS";
+                        await DisplayAlert("Alert", "There is no location on this device, please check your privacy settings!", "OK");
                     else
-                        StopTrackingBtn.Text = $"{location.Latitude} {location.Longitude}";
+                        // Set a pin to equal your location, could cheat and set these to invisible labels then carry them across
+                    StopTrackingBtn.Text = $"{location.Latitude} {location.Longitude}";
+                    //double userlocation = $"{location.Latitude} {location.Longitude}";
+
 
                 }
                 catch (Exception ex)
@@ -66,11 +71,17 @@ namespace TrackingApp
                     Debug.WriteLine($"Something is wrong");
                 }
             }
-            else
+        }
+
+        private async void StartTrackingBtn_Clicked(object sender, EventArgs e)
+        {
+            StopTrackingBtn.IsVisible = false;
+            StartTrackingBtn.IsVisible = true;
+
+            if (gpsSwitch.IsToggled != true)
             {
                 await DisplayAlert("Alert", "You cannot begin tracking unless the 'Send GPS Signal' switch is turned on!", "OK");
             }
-
         }
 
         private void StopTrackingBtn_Clicked(object sender, EventArgs e)

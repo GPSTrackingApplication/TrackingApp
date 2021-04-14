@@ -32,7 +32,8 @@
             <Label Text="Send GPS Signal" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" TextColor="White" FontSize="20" VerticalOptions="Center"/>
             <Switch x:Name="gpsSwitch"
                     VerticalOptions="Center" 
-                    HorizontalOptions="Center">
+                    HorizontalOptions="Center"
+                    Toggled="gpsSwitchOnToggled">
             </Switch>
         </StackLayout>
 
