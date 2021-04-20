@@ -28,8 +28,8 @@ namespace TrackingApp
         {
 
 
-            Preferences.Set("lastLongitude", sleepLon);
-            Preferences.Set("lastLatitude", sleepLat);
+            Preferences.Set("sleepLonitude", sleepLon);
+            Preferences.Set("sleepLatitude", sleepLat);
 
         }
 

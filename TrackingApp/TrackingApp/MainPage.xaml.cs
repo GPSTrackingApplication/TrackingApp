@@ -15,6 +15,8 @@ namespace TrackingApp
     {
         static double userLon;
         static double userLat;
+        static double lastKnownLat;
+        static double lastKnownLon;
 
 
 
@@ -22,28 +24,54 @@ namespace TrackingApp
         {
             InitializeComponent();
 
-
-
+            // Make it so that this doesnt run on launch somehow
             gpsSwitch.IsToggled = Preferences.Get("gpsSwitch", false);
 
-            // If toggle is set as send GPS signal
-            getLocation();
-            // Sets the sleep position to the last known location, will need to do this every time we get a new position, and retreive it if the user has not toggled the gps tracking button
-            App.sleepLat = userLat;
-            App.sleepLon = userLon;
-
-
-            // else then find the last known location from when toggle is turned off.
-
-            Pin pinUserDevice = new Pin()
+            if (gpsSwitch.IsToggled == true)
             {
-                Type = PinType.Place,
-                Label = "Your Device",
-                Position = new Position(userLat, userLon),
-                Tag = "id_userDevice"
-            };
-            map.Pins.Add(pinUserDevice);
-            map.MoveToRegion(MapSpan.FromCenterAndRadius(pinUserDevice.Position, Distance.FromMeters(5000)));
+                userLon = Preferences.Get("sleepLonitude", userLon);
+                userLat = Preferences.Get("sleepLatitude", userLat);
+
+                if (userLon != 0 && userLat != 0)
+                {
+                    Pin pinUserDevice = new Pin()
+                    {
+                        Type = PinType.Place,
+                        Label = "Device",
+                        Position = new Position(userLat, userLon),
+                        Tag = "id_DeviceLocation"
+                    };
+                    map.Pins.Add(pinUserDevice);
+                    map.MoveToRegion(MapSpan.FromCenterAndRadius(pinUserDevice.Position, Distance.FromMeters(5000)));
+                }
+                
+                // something here that makes this call every few seconds, then needs to update the pin, clear all pins and add a new one. Timercallback()
+
+                // Timercallback();
+                //getLocation();
+                // Pin update
+                App.sleepLat = userLat;
+                App.sleepLon = userLon;
+            }
+
+            if (gpsSwitch.IsToggled == false){
+
+                userLon = Preferences.Get("lastKnownLon", userLon);
+                userLat = Preferences.Get("lastKnownLat", userLat);
+
+                if(userLon != 0 && userLat != 0)
+                {
+                    Pin pinUserDevice = new Pin()
+                    {
+                        Type = PinType.Place,
+                        Label = "Last Known Device Location",
+                        Position = new Position(userLat, userLon),
+                        Tag = "id_LastDeviceLocation"
+                    };
+                    map.Pins.Add(pinUserDevice);
+                    map.MoveToRegion(MapSpan.FromCenterAndRadius(pinUserDevice.Position, Distance.FromMeters(5000)));
+                }
+            }           
         }
 
         public async void getLocation()
@@ -84,57 +112,22 @@ namespace TrackingApp
 
         private async void gpsSwitchOnToggled(object sender, ToggledEventArgs e)
         {
+            // Make it so that this doesnt run on launch somehow
             Preferences.Set("gpsSwitch", gpsSwitch.IsToggled);
 
-            if (gpsSwitch.IsToggled == true)
-            {
-                try
-                {
-                    var location = await Geolocation.GetLastKnownLocationAsync();
-                    if (location == null)
-                    {
-                        /*
-                        var request = new GeolocationRequest(GeolocationAccuracy.Low);
-                        location = await Geolocation.GetLocationAsync(request);
-                        */
-
-                        location = await Geolocation.GetLocationAsync(new GeolocationRequest
-                        {
-                            DesiredAccuracy = GeolocationAccuracy.Low,
-                            Timeout = TimeSpan.FromSeconds(30)
-
-                        });
-
-                    }
-
-                    if (location == null)
-                        await DisplayAlert("Alert", "There is no location on this device, please check your privacy settings!", "OK");
-                    else
-                        // Set a pin to equal your location, could cheat and set these to invisible labels then carry them across
-                        // StopTrackingBtn.Text = $"{location.Latitude} {location.Longitude}";
-                        userLon = location.Longitude;
-                    userLat = location.Latitude;
-                    await DisplayAlert("Alert", "Longitude" + userLon + "latitude" + userLat, "OK");
-
-
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"Something is wrong");
-                }
-            }
             if (gpsSwitch.IsToggled == false)
             {
                 try
                 {
-
-                    // Save the longlat into sharedpreferences.
+                    lastKnownLon = userLon;
+                    lastKnownLat = userLat;
+                    Preferences.Set("lastKnownLon", lastKnownLon);
+                    Preferences.Set("lastKnownLat", lastKnownLat);
                     var location = await Geolocation.GetLastKnownLocationAsync();
                 }
                 catch
                 {
                     Debug.WriteLine($"Something is wrong");
-
                 }
             }
         }
@@ -144,10 +137,8 @@ namespace TrackingApp
             StopTrackingBtn.IsVisible = true;
             StartTrackingBtn.IsVisible = false;
 
-            Preferences.Get("lastLongitude", userLon);
-            Preferences.Get("lastLatitude", userLat);
-
-            await DisplayAlert("Alert", "" + userLon + "" + userLat, "OK");
+            //await DisplayAlert("Alert", "" + userLon + "" + userLat, "OK");
+            getLocation();
 
 
             if (gpsSwitch.IsToggled != true)
@@ -161,7 +152,6 @@ namespace TrackingApp
             StopTrackingBtn.IsVisible = false;
             StartTrackingBtn.IsVisible = true;
         }
-
 
     }
 
