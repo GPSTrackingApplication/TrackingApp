@@ -8,6 +8,8 @@ using Xamarin.Forms;
 using Xamarin.Forms.GoogleMaps;
 using Xamarin.Essentials;
 using System.Diagnostics;
+using System.Threading;
+
 
 namespace TrackingApp
 {
@@ -27,12 +29,10 @@ namespace TrackingApp
         public MainPage()
         {
             InitializeComponent();
-            // Make it so that this doesnt run on launch somehow
+
             gpsSwitch.IsToggled = Preferences.Get("gpsSwitch", false);
             launchCounter++;
 
-
-            // BUG shared preferences arent working anymore 
             if (gpsSwitch.IsToggled == true)
             {
                 userLon = Preferences.Get("sleepLonitude", sleepLon);
@@ -49,26 +49,22 @@ namespace TrackingApp
                     };
                     map.Pins.Add(pinUserDevice);
                     map.MoveToRegion(MapSpan.FromCenterAndRadius(pinUserDevice.Position, Distance.FromMeters(5000)));
-                }
-                
-                // something here that makes this call every few seconds, then needs to update the pin, clear all pins and add a new one. Timercallback()
-                // Should this actually be in ontoggleswitch or getlocation()?
 
-                // Timercallback();
-                //getLocation();
-                // Pin update
+                }
 
                 // -- BUG This isnt saving
                 App.sleepLat = userLat;
                 App.sleepLon = userLon;
+
             }
 
-            if (gpsSwitch.IsToggled == false){
+            if (gpsSwitch.IsToggled == false)
+            {
 
                 userLon = Preferences.Get("lastKnownLon", lastKnownLon);
                 userLat = Preferences.Get("lastKnownLat", lastKnownLat);
 
-                if(userLon != 0 && userLat != 0)
+                if (userLon != 0 && userLat != 0)
                 {
                     Pin pinUserDevice = new Pin()
                     {
@@ -80,7 +76,29 @@ namespace TrackingApp
                     map.Pins.Add(pinUserDevice);
                     map.MoveToRegion(MapSpan.FromCenterAndRadius(pinUserDevice.Position, Distance.FromMeters(5000)));
                 }
-            }           
+            }
+
+
+
+            // Will crash
+            var startTimeSpan = TimeSpan.Zero;
+            var periodTimeSpan = TimeSpan.FromSeconds(30);
+
+            var timer = new System.Threading.Timer((e) =>
+            {
+                getLocation();
+                Pin pinUserDevice = new Pin()
+                {
+                    Type = PinType.Place,
+                    Label = "Device Location",
+                    Position = new Position(userLat, userLon),
+                    Tag = "id_DeviceLocation"
+                };
+                map.Pins.Add(pinUserDevice);
+                map.MoveToRegion(MapSpan.FromCenterAndRadius(pinUserDevice.Position, Distance.FromMeters(5000)));
+
+            }, null, startTimeSpan, periodTimeSpan);
+
         }
 
         public async void getLocation()
@@ -98,18 +116,14 @@ namespace TrackingApp
                     });
 
                 }
-
-                if (location == null)
-                    await DisplayAlert("Alert", "There is no location on this device, please check your privacy settings!", "OK");
                 else
-                // Set a pin to equal your location, could cheat and set these to invisible labels then carry them across
-                // StopTrackingBtn.Text = $"{location.Latitude} {location.Longitude}";
 
                 userLon = location.Longitude;
                 userLat = location.Latitude;
                 await DisplayAlert("Alert", "Longitude" + userLon + "latitude" + userLat, "OK");
                 map.Pins.Clear();
 
+                /*
                 Pin pinUserDevice = new Pin()
                 {
                     Type = PinType.Place,
@@ -119,7 +133,7 @@ namespace TrackingApp
                 };
                 map.Pins.Add(pinUserDevice);
                 map.MoveToRegion(MapSpan.FromCenterAndRadius(pinUserDevice.Position, Distance.FromMeters(5000)));
-
+                */
 
             }
             catch (Exception ex)
@@ -143,7 +157,7 @@ namespace TrackingApp
                     try
                     {
                         // BUG HERE LASTKNOWNLON IS SET TO NOTHING
-                        
+
                         lastKnownLon = userLon;
                         lastKnownLat = userLat;
 
@@ -171,7 +185,7 @@ namespace TrackingApp
                         Debug.WriteLine($"Something is wrong");
                     }
                 }
-                if(gpsSwitch.IsToggled == true)
+                if (gpsSwitch.IsToggled == true)
                 {
                     getLocation();
                 }
@@ -199,24 +213,40 @@ namespace TrackingApp
             StartTrackingBtn.IsVisible = true;
         }
 
+     
+
+        /*
+        private bool TimerCallBack()
+        {
+
+            map.Pins.Clear();
+            cargarPinesEnMapa();
+
+            return true;
+        }
+
+        private void cargarPinesEnMapa()
+        {
+            for (int i = 0; i < listaPines.Count; i++)
+                map.Pins.Add((Pin)listaPines[i]);
+        }
+        */
+
+        /*TODO
+         * Read GPS location
+         * 3) Sending this to the backend.
+         * 4) Fix sleep location bug.
+         * 5) Refresh pins every minute or so
+         * 
+         * Read Devices GPS location
+         * 1) When the start tracking button has been pressed
+         * 2) Set that devices location as a seperate pin
+         * 
+         * Save the toggle state of the send gps thing in saved state, and last known location when app is closed
+         * 
+         * Make These two coordinates constantly update
+         * Workbook!
+         */
+
     }
-
-/*TODO
- * Read GPS location
- * 1) Send GPS signal if switch has been flipped
- * 2) Set GPS location as the current pin, might require converting location into positioning coordinates
- * 3) Sending this to the backend.
- * 4) Can this work when the application is closed?
- * 5) Last known location set if Send GPS signal switch has not been flipped
- * 
- * Read Devices GPS location
- * 1) When the start tracking button has been pressed
- * 2) Set that devices location as a seperate pin
- * 
- * Save the toggle state of the send gps thing in saved state, and last known location when app is closed
- * 
- * Make These two coordinates constantly update
- * Workbook!
- */
-
 }
