@@ -9,7 +9,8 @@ using Xamarin.Forms.GoogleMaps;
 using Xamarin.Essentials;
 using System.Diagnostics;
 using System.Threading;
-
+using Firebase.Database;
+using Firebase.Database.Query;
 
 namespace TrackingApp
 {
@@ -17,18 +18,23 @@ namespace TrackingApp
     {
         static double userLon;
         static double userLat;
+        static double deviceLat;
+        static double deviceLon;
+
         public static double sleepLon;
         public static double sleepLat;
         static double lastKnownLat;
         static double lastKnownLon;
         static int launchCounter = 0;
 
-
-
+        FirebaseClient firebase = new FirebaseClient("https://iotdevicetracker-default-rtdb.firebaseio.com/");
+        FirebaseHelper fb = new FirebaseHelper();
 
         public MainPage()
         {
             InitializeComponent();
+
+
 
             gpsSwitch.IsToggled = Preferences.Get("gpsSwitch", false);
             launchCounter++;
@@ -84,6 +90,7 @@ namespace TrackingApp
             var startTimeSpan = TimeSpan.Zero;
             var periodTimeSpan = TimeSpan.FromSeconds(30);
 
+            /*
             var timer = new System.Threading.Timer((e) =>
             {
                 getLocation();
@@ -98,7 +105,7 @@ namespace TrackingApp
                 map.MoveToRegion(MapSpan.FromCenterAndRadius(pinUserDevice.Position, Distance.FromMeters(5000)));
 
             }, null, startTimeSpan, periodTimeSpan);
-
+            */
         }
 
         public async void getLocation()
@@ -120,8 +127,10 @@ namespace TrackingApp
 
                 userLon = location.Longitude;
                 userLat = location.Latitude;
-                await DisplayAlert("Alert", "Longitude" + userLon + "latitude" + userLat, "OK");
+                //await DisplayAlert("Alert", "Longitude" + userLon + "latitude" + userLat, "OK");
                 map.Pins.Clear();
+                sendLocation(userLat, userLon);
+                deviceLocation();
 
                 /*
                 Pin pinUserDevice = new Pin()
@@ -198,7 +207,7 @@ namespace TrackingApp
             StartTrackingBtn.IsVisible = false;
 
             //await DisplayAlert("Alert", "" + userLon + "" + userLat, "OK");
-            //getLocation();
+            getLocation();
 
 
             if (gpsSwitch.IsToggled != true)
@@ -213,7 +222,45 @@ namespace TrackingApp
             StartTrackingBtn.IsVisible = true;
         }
 
-     
+        public async Task sendLocation(double userLat, double userLon)
+        {
+            await firebase
+                .Child("UserLocation")
+                .PutAsync(new Location() { UserLat = userLat, UserLon = userLon });
+            // Pins no longer updating
+
+
+        }
+
+        /*
+        public async Task <DeviceLocation> RecieveLocation(double deviceLat)
+        {
+            var deviceLocation = await getDeviceLocation();
+            await firebase
+                .Child("Napier48")
+                .OnceAsync<DeviceLocation>();
+            return deviceLocation.Where(a => a.lat == deviceLat).FirstOrDefault();
+
+
+            //.OnceAsync(new DeviceLocation() { DeviceLat = deviceLat, DeviceLon = deviceLon });
+        }
+        */
+
+
+
+        public async Task deviceLocation()
+        {
+            var deviceLocation = await fb.GetDeviceLocation();
+            if (deviceLocation != null)
+            {
+                await DisplayAlert("Success", "Person Retrive Successfully", "OK");
+
+            }
+
+
+        }
+
+
 
         /*
         private bool TimerCallBack()
@@ -234,7 +281,6 @@ namespace TrackingApp
 
         /*TODO
          * Read GPS location
-         * 3) Sending this to the backend.
          * 4) Fix sleep location bug.
          * 5) Refresh pins every minute or so
          * 
