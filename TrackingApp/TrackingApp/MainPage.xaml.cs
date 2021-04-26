@@ -26,6 +26,8 @@ namespace TrackingApp
         static double lastKnownLat;
         static double lastKnownLon;
         static int launchCounter = 0;
+        bool startTracking = false;
+
 
         FirebaseClient firebase = new FirebaseClient("https://iotdevicetracker-default-rtdb.firebaseio.com/");
         FirebaseHelper fb = new FirebaseHelper();
@@ -74,7 +76,7 @@ namespace TrackingApp
                     {
                         Type = PinType.Place,
                         Label = "Last Known Device Location",
-                        Position = new Position(lastKnownLon, lastKnownLat),
+                        Position = new Position(userLat, userLon),
                         Tag = "id_LastDeviceLocation"
                     };
                     map.Pins.Add(pinUserDevice);
@@ -176,15 +178,23 @@ namespace TrackingApp
 
                         map.Pins.Clear();
 
-                        Pin pinUserDevice = new Pin()
+                        if(userLat != 0 && userLon != 0)
                         {
-                            Type = PinType.Place,
-                            Label = "Last Known Device Location",
-                            Position = new Position(userLat, userLon),
-                            Tag = "id_LastDeviceLocation"
-                        };
-                        map.Pins.Add(pinUserDevice);
-                        map.MoveToRegion(MapSpan.FromCenterAndRadius(pinUserDevice.Position, Distance.FromMeters(5000)));
+                            Pin pinUserDevice = new Pin()
+                            {
+                                Type = PinType.Place,
+                                Label = "Last Known Device Location",
+                                Position = new Position(userLat, userLon),
+                                Tag = "id_LastDeviceLocation"
+                            };
+                            map.Pins.Add(pinUserDevice);
+                            map.MoveToRegion(MapSpan.FromCenterAndRadius(pinUserDevice.Position, Distance.FromMeters(5000)));
+                        }
+                        if (startTracking == true)
+                        {
+                            getDeviceLocation();
+                            await DisplayAlert("Alert", "You are not currently tracking your mobiles location, this may make it more difficult to find the tracker!", "OK");
+                        }
                     }
 
                     catch
@@ -201,21 +211,53 @@ namespace TrackingApp
 
         private async void StartTrackingBtn_Clicked(object sender, EventArgs e)
         {
-            StopTrackingBtn.IsVisible = true;
-            StartTrackingBtn.IsVisible = false;
-
-            getDeviceLocation();
-
-            if (gpsSwitch.IsToggled != true)
-            {
-                await DisplayAlert("Alert", "You cannot begin tracking unless the 'Send GPS Signal' switch is turned on!", "OK");
-            }
+                StopTrackingBtn.IsVisible = true;
+                StartTrackingBtn.IsVisible = false;
+                startTracking = true;
+                getDeviceLocation();   
         }
 
         private void StopTrackingBtn_Clicked(object sender, EventArgs e)
         {
+            startTracking = false;
+
             StopTrackingBtn.IsVisible = false;
             StartTrackingBtn.IsVisible = true;
+
+            map.Pins.Clear();
+            if (gpsSwitch.IsToggled == true)
+            {
+                Pin pinUserDevice = new Pin()
+                {
+                    Type = PinType.Place,
+                    Label = "Device Location",
+                    Position = new Position(userLat, userLon),
+                    Tag = "id_DeviceLocation"
+                };
+                map.Pins.Add(pinUserDevice);
+                map.MoveToRegion(MapSpan.FromCenterAndRadius(pinUserDevice.Position, Distance.FromMeters(5000)));
+            }
+            
+            if (gpsSwitch.IsToggled == false)
+            {
+                userLon = Preferences.Get("lastKnownLon", lastKnownLon);
+                userLat = Preferences.Get("lastKnownLat", lastKnownLat);
+
+                if (userLon != 0 && userLat != 0)
+                {
+                    Pin pinUserDevice = new Pin()
+                    {
+                        Type = PinType.Place,
+                        Label = "Last Known Device Location",
+                        Position = new Position(userLat, userLon),
+                        Tag = "id_LastDeviceLocation"
+                    };
+                    map.Pins.Add(pinUserDevice);
+                    map.MoveToRegion(MapSpan.FromCenterAndRadius(pinUserDevice.Position, Distance.FromMeters(5000)));
+                }
+            }
+
+
         }
 
         public async Task sendLocation(double userLat, double userLon)
@@ -230,28 +272,23 @@ namespace TrackingApp
             var deviceLocation = await fb.GetDeviceLocation();
             if (deviceLocation != null)
             {
-                Pin pinUserDevice = new Pin()
+                Pin pinUserTracker = new Pin()
                 {
                     Type = PinType.Place,
                     Label = "Tracker Location",
                     Position = new Position(deviceLocation.lat, deviceLocation.lon),
                     Tag = "id_TrackerLocation"
                 };
-                map.Pins.Add(pinUserDevice);
-                map.MoveToRegion(MapSpan.FromCenterAndRadius(pinUserDevice.Position, Distance.FromMeters(5000)));
+                map.Pins.Add(pinUserTracker);
+                map.MoveToRegion(MapSpan.FromCenterAndRadius(pinUserTracker.Position, Distance.FromMeters(5000)));
             }
         }
 
 
         /*TODO
          * Read GPS location
-         * 4) Fix sleep location bug.
          * 5) Refresh pins every minute or so. Make These two coordinates constantly update
-
-         * 
-         * Read Devices GPS location
-         * 1) When the start tracking button has 
-         * 
+      
          * Extras
          * 1) Workbook!
          * 2) Clean code
