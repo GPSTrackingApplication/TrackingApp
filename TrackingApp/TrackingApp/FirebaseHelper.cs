@@ -36,8 +36,9 @@ namespace TrackingApp
               .Child("IoTGPS")
               .OnceAsync<DeviceLocation>()).Select(item => new DeviceLocation
               {
-                  DeviceLat = item.Object.DeviceLat,
-                  DeviceLon = item.Object.DeviceLon
+                  lat = item.Object.lat,
+                  lon = item.Object.lon,
+                  Id = item.Object.Id
 
               }).ToList();
         }
@@ -49,7 +50,8 @@ namespace TrackingApp
             await firebase
               .Child("IoTGPS")
               .OnceAsync<DeviceLocation>();
-            return deviceLocation.Where(a => a.Id == "napier48").FirstOrDefault();
+            var x = 2;
+            return deviceLocation[0];
         }
     }
     

@@ -6,8 +6,8 @@ namespace TrackingApp
 {
     public class DeviceLocation
     {
-        public double DeviceLat { get; set; }
-        public double DeviceLon { get; set; }
+        public double lat { get; set; }
+        public double lon{ get; set; }
 
         public string Id { get; set; }
     }

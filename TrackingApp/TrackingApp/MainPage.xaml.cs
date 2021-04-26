@@ -34,8 +34,6 @@ namespace TrackingApp
         {
             InitializeComponent();
 
-
-
             gpsSwitch.IsToggled = Preferences.Get("gpsSwitch", false);
             launchCounter++;
 
@@ -119,20 +117,20 @@ namespace TrackingApp
                     {
                         DesiredAccuracy = GeolocationAccuracy.Low,
                         Timeout = TimeSpan.FromSeconds(30)
-
                     });
-
                 }
                 else
 
                 userLon = location.Longitude;
                 userLat = location.Latitude;
+
                 //await DisplayAlert("Alert", "Longitude" + userLon + "latitude" + userLat, "OK");
                 map.Pins.Clear();
                 sendLocation(userLat, userLon);
-                deviceLocation();
+                
+                
 
-                /*
+                
                 Pin pinUserDevice = new Pin()
                 {
                     Type = PinType.Place,
@@ -142,7 +140,7 @@ namespace TrackingApp
                 };
                 map.Pins.Add(pinUserDevice);
                 map.MoveToRegion(MapSpan.FromCenterAndRadius(pinUserDevice.Position, Distance.FromMeters(5000)));
-                */
+                
 
             }
             catch (Exception ex)
@@ -206,9 +204,7 @@ namespace TrackingApp
             StopTrackingBtn.IsVisible = true;
             StartTrackingBtn.IsVisible = false;
 
-            //await DisplayAlert("Alert", "" + userLon + "" + userLat, "OK");
-            getLocation();
-
+            getDeviceLocation();
 
             if (gpsSwitch.IsToggled != true)
             {
@@ -227,71 +223,39 @@ namespace TrackingApp
             await firebase
                 .Child("UserLocation")
                 .PutAsync(new Location() { UserLat = userLat, UserLon = userLon });
-            // Pins no longer updating
-
-
         }
 
-        /*
-        public async Task <DeviceLocation> RecieveLocation(double deviceLat)
-        {
-            var deviceLocation = await getDeviceLocation();
-            await firebase
-                .Child("Napier48")
-                .OnceAsync<DeviceLocation>();
-            return deviceLocation.Where(a => a.lat == deviceLat).FirstOrDefault();
-
-
-            //.OnceAsync(new DeviceLocation() { DeviceLat = deviceLat, DeviceLon = deviceLon });
-        }
-        */
-
-
-
-        public async Task deviceLocation()
+        public async Task getDeviceLocation()
         {
             var deviceLocation = await fb.GetDeviceLocation();
             if (deviceLocation != null)
             {
-                await DisplayAlert("Success", "Person Retrive Successfully", "OK");
-
+                Pin pinUserDevice = new Pin()
+                {
+                    Type = PinType.Place,
+                    Label = "Tracker Location",
+                    Position = new Position(deviceLocation.lat, deviceLocation.lon),
+                    Tag = "id_TrackerLocation"
+                };
+                map.Pins.Add(pinUserDevice);
+                map.MoveToRegion(MapSpan.FromCenterAndRadius(pinUserDevice.Position, Distance.FromMeters(5000)));
             }
-
-
         }
 
-
-
-        /*
-        private bool TimerCallBack()
-        {
-
-            map.Pins.Clear();
-            cargarPinesEnMapa();
-
-            return true;
-        }
-
-        private void cargarPinesEnMapa()
-        {
-            for (int i = 0; i < listaPines.Count; i++)
-                map.Pins.Add((Pin)listaPines[i]);
-        }
-        */
 
         /*TODO
          * Read GPS location
          * 4) Fix sleep location bug.
-         * 5) Refresh pins every minute or so
+         * 5) Refresh pins every minute or so. Make These two coordinates constantly update
+
          * 
          * Read Devices GPS location
-         * 1) When the start tracking button has been pressed
-         * 2) Set that devices location as a seperate pin
+         * 1) When the start tracking button has 
          * 
-         * Save the toggle state of the send gps thing in saved state, and last known location when app is closed
-         * 
-         * Make These two coordinates constantly update
-         * Workbook!
+         * Extras
+         * 1) Workbook!
+         * 2) Clean code
+         * 3) Comment code
          */
 
     }
