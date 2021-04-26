@@ -18,8 +18,6 @@ namespace TrackingApp
     {
         static double userLon;
         static double userLat;
-        static double deviceLat;
-        static double deviceLon;
 
         public static double sleepLon;
         public static double sleepLat;
@@ -36,7 +34,10 @@ namespace TrackingApp
         {
             InitializeComponent();
 
+            // Gets the most recent state of the GPS switch and sets it
             gpsSwitch.IsToggled = Preferences.Get("gpsSwitch", false);
+            
+            // Launch counter is set so that the GPS switch on toggled event handler is not set off when the application is launched
             launchCounter++;
 
             if (gpsSwitch.IsToggled == true)
@@ -85,12 +86,12 @@ namespace TrackingApp
             }
 
 
-
+            /*
             // Will crash
             var startTimeSpan = TimeSpan.Zero;
             var periodTimeSpan = TimeSpan.FromSeconds(30);
 
-            /*
+
             var timer = new System.Threading.Timer((e) =>
             {
                 getLocation();
@@ -156,17 +157,16 @@ namespace TrackingApp
 
         private async void gpsSwitchOnToggled(object sender, ToggledEventArgs e)
         {
-            // Make it so that this doesnt run on launch somehow
+            // Set the gpsSwitch to its current state, save this in sharedpreferences
             Preferences.Set("gpsSwitch", gpsSwitch.IsToggled);
 
+            // Launch counter set so that these are not triggered when the application is launched.
             if (launchCounter != 0)
             {
                 if (gpsSwitch.IsToggled == false)
                 {
                     try
                     {
-                        // BUG HERE LASTKNOWNLON IS SET TO NOTHING
-
                         lastKnownLon = userLon;
                         lastKnownLat = userLat;
 
@@ -256,8 +256,6 @@ namespace TrackingApp
                     map.MoveToRegion(MapSpan.FromCenterAndRadius(pinUserDevice.Position, Distance.FromMeters(5000)));
                 }
             }
-
-
         }
 
         public async Task sendLocation(double userLat, double userLon)
