@@ -1,4 +1,10 @@
-﻿using System;
+﻿/* GPS Tracker Application
+ * Coursework 2 - Sensing Systems for Mobile Applications
+ * SET09118
+ * By Struan Clyne 40318347 and Wesley Young 40402601
+*/
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
