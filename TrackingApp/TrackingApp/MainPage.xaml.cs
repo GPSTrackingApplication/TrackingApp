@@ -8,14 +8,66 @@ using Xamarin.Forms;
 using Xamarin.Forms.GoogleMaps;
 using Xamarin.Essentials;
 using System.Diagnostics;
-using System.Threading;
 using Firebase.Database;
 using Firebase.Database.Query;
+using System.Timers;
 
 namespace TrackingApp
 {
+    [DesignTimeVisible(false)]
+
     public partial class MainPage : ContentPage
     {
+
+        // The following variables are taken from a 'progress value' timer project found here https://youtu.be/DjfEBnPb4ns
+        // This project has been reworked to remove the graphics and instead use the timer to call certain methods depedning on the current state of the application
+
+        // Double to establish the current progress of the timer, the number it is currently on
+        private double _ProgressValue;
+        public double ProgressValue
+        {
+            get
+            {
+                return _ProgressValue;
+            }
+            set
+            {
+                _ProgressValue = value;
+                OnPropertyChanged();
+            }
+        }
+        private double _Minimum;
+        public double Minimum
+        {
+            get
+            {
+                return _Minimum;
+            }
+            set
+            {
+                _Minimum = value;
+                OnPropertyChanged();
+            }
+        }
+        private double _Maximum;
+        public double Maximum
+        {
+            get
+            {
+                return _ProgressValue;
+            }
+            set
+            {
+                _ProgressValue = value;
+                OnPropertyChanged();
+            }
+        }
+        private Timer time = new Timer();
+        private bool timerRunning;
+
+
+
+
         static double userLon;
         static double userLat;
 
@@ -25,6 +77,8 @@ namespace TrackingApp
         static double lastKnownLon;
         static int launchCounter = 0;
         bool startTracking = false;
+        int timerCount = 0;
+
 
 
         FirebaseClient firebase = new FirebaseClient("https://iotdevicetracker-default-rtdb.firebaseio.com/");
@@ -33,6 +87,11 @@ namespace TrackingApp
         public MainPage()
         {
             InitializeComponent();
+            BindingContext = this;
+            Minimum = 0;
+            Maximum = 60;
+            ProgressValue = 60;
+            timerRunning = false;
 
             // Gets the most recent state of the GPS switch and sets it
             gpsSwitch.IsToggled = Preferences.Get("gpsSwitch", false);
@@ -63,6 +122,8 @@ namespace TrackingApp
                 App.sleepLat = userLat;
                 App.sleepLon = userLon;
 
+                getLocation();
+                //startTimer();
             }
 
             if (gpsSwitch.IsToggled == false)
@@ -84,31 +145,51 @@ namespace TrackingApp
                     map.MoveToRegion(MapSpan.FromCenterAndRadius(pinUserDevice.Position, Distance.FromMeters(5000)));
                 }
             }
-
-
-            /*
-            // Will crash
-            var startTimeSpan = TimeSpan.Zero;
-            var periodTimeSpan = TimeSpan.FromSeconds(30);
-
-
-            var timer = new System.Threading.Timer((e) =>
-            {
-                getLocation();
-                Pin pinUserDevice = new Pin()
-                {
-                    Type = PinType.Place,
-                    Label = "Device Location",
-                    Position = new Position(userLat, userLon),
-                    Tag = "id_DeviceLocation"
-                };
-                map.Pins.Add(pinUserDevice);
-                map.MoveToRegion(MapSpan.FromCenterAndRadius(pinUserDevice.Position, Distance.FromMeters(5000)));
-
-            }, null, startTimeSpan, periodTimeSpan);
-            */
         }
 
+        public async void startTimer()
+        {
+            timerRunning = true;
+            time.Start();
+            Device.StartTimer(TimeSpan.FromSeconds(1), () =>
+            {
+                if (ProgressValue > Minimum)
+                {
+                    ProgressValue--;
+                    return true;
+                }
+                else if (ProgressValue == Minimum)
+                {
+                    BindingContext = this;
+                    Minimum = 0;
+                    Maximum = 60;
+                    ProgressValue = 60;
+                    timerCount++;
+
+
+                if (gpsSwitch.IsToggled != false)
+                    {
+                        getLocation();
+                        sendLocation(userLat, userLon);
+                    }
+
+
+                    if (startTracking == true)
+                    {
+                        getDeviceLocation();
+                    }
+                    time.Stop();
+                    timerRunning = true;
+                    time.Start();
+
+                    return true;
+                }
+                else
+                {
+                    return true;
+                }
+            });
+        }
         public async void getLocation()
         {
             try
@@ -130,9 +211,6 @@ namespace TrackingApp
                 //await DisplayAlert("Alert", "Longitude" + userLon + "latitude" + userLat, "OK");
                 map.Pins.Clear();
                 sendLocation(userLat, userLon);
-                
-                
-
                 
                 Pin pinUserDevice = new Pin()
                 {
@@ -160,17 +238,22 @@ namespace TrackingApp
             // Set the gpsSwitch to its current state, save this in sharedpreferences
             Preferences.Set("gpsSwitch", gpsSwitch.IsToggled);
 
+            if (gpsSwitch.IsToggled == true)
+            {
+                startTimer();
+            }
             // Launch counter set so that these are not triggered when the application is launched.
             if (launchCounter != 0)
             {
                 if (gpsSwitch.IsToggled == false)
                 {
+                    timerRunning = false;
+                    time.Stop();
+
                     try
                     {
                         lastKnownLon = userLon;
                         lastKnownLat = userLat;
-
-
 
                         Preferences.Set("lastKnownLon", lastKnownLon);
                         Preferences.Set("lastKnownLat", lastKnownLat);
@@ -202,24 +285,32 @@ namespace TrackingApp
                         Debug.WriteLine($"Something is wrong");
                     }
                 }
-                if (gpsSwitch.IsToggled == true)
-                {
-                    getLocation();
-                }
             }
         }
 
         private async void StartTrackingBtn_Clicked(object sender, EventArgs e)
         {
-                StopTrackingBtn.IsVisible = true;
-                StartTrackingBtn.IsVisible = false;
-                startTracking = true;
-                getDeviceLocation();   
+            StopTrackingBtn.IsVisible = true;
+            StartTrackingBtn.IsVisible = false;
+            startTracking = true;
+
+            startTimer();
+            getDeviceLocation();
+            
+            if (startTracking == false)
+            {
+                time.Stop();
+            }
         }
 
         private void StopTrackingBtn_Clicked(object sender, EventArgs e)
         {
             startTracking = false;
+            if(gpsSwitch.IsToggled == false)
+            {
+                time.Stop();
+            }
+
 
             StopTrackingBtn.IsVisible = false;
             StartTrackingBtn.IsVisible = true;
@@ -283,11 +374,7 @@ namespace TrackingApp
         }
 
 
-        /*TODO
-         * Read GPS location
-         * 5) Refresh pins every minute or so. Make These two coordinates constantly update
-      
-         * Extras
+        /*TODO      
          * 1) Workbook!
          * 2) Clean code
          * 3) Comment code

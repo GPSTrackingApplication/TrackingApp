@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 using Foundation;
+using ProgressRingControl.Forms.Plugin.iOS;
 using TrackingApp.Constants;
 using UIKit;
 
@@ -24,6 +25,7 @@ namespace TrackingApp.iOS
         public override bool FinishedLaunching(UIApplication app, NSDictionary options)
         {
             global::Xamarin.Forms.Forms.Init();
+            ProgressRingRenderer.Init();
             Xamarin.FormsGoogleMaps.Init(AppConstants.GoogleMapsApiKey);
 
             LoadApplication(new App());
