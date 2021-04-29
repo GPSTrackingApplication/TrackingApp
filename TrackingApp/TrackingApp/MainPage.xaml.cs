@@ -412,6 +412,7 @@ namespace TrackingApp
             // If the device location is not null then create a new pin with the current location on the map
             if (deviceLocation != null)
             {
+                deviceLocation.lon = deviceLocation.lon * -1;
                 Pin pinUserTracker = new Pin()
                 {
                     Type = PinType.Place,

@@ -17,7 +17,7 @@ namespace TrackingApp
         FirebaseClient firebase = new FirebaseClient("https://iotdevicetracker-default-rtdb.firebaseio.com/");
 
         // Method to read all latitide and longitude values from the firebase database
-        public async Task<List<DeviceLocation>> GetAllDeviceLocation()
+        public async Task<List<DeviceLocation>> GetAllDeviceInformation()
         {
             return (await firebase
               .Child("IoTGPS")
@@ -33,7 +33,7 @@ namespace TrackingApp
         // Method to return the values from the database
         public async Task<DeviceLocation> GetDeviceLocation()
         {
-            var deviceLocation = await GetAllDeviceLocation();
+            var deviceLocation = await GetAllDeviceInformation();
             await firebase
               .Child("IoTGPS")
               .OnceAsync<DeviceLocation>();
